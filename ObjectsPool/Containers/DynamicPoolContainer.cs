@@ -7,7 +7,7 @@ namespace ObjectsPool.Containers {
     /// <summary>
     /// Контейнер объектов изменяемого (в пределах) размера 
     /// </summary>
-    internal sealed class DynamicPoolContainer<T> : IPoolContainer<T> {
+    internal sealed class DynamicPoolContainer<T> : IPoolContainer<T>{
         private readonly Queue<T> _container;
 
         private readonly int _defaultSize;
@@ -36,10 +36,14 @@ namespace ObjectsPool.Containers {
         /// Пытается получить элемент из коллекции
         /// <para>(Может вернуть default)</para>
         /// </summary>
-        public T Get() {
-            return _container.Count == 0 
-                ? default 
-                : _container.Dequeue();
+        public bool TryGet(out T element) {
+            if (_container.Count == 0) {
+                element = default;
+                return false;
+            }
+
+            element = _container.Dequeue();
+            return true;
         }
 
         /// <summary>
@@ -47,7 +51,7 @@ namespace ObjectsPool.Containers {
         /// <para>В случае, если элемент удалось закэшировать, возвращает TRUE</para>
         /// <para>Иначе - FALSE</para>
         /// </summary>
-        public bool Return(T element) {
+        public bool TryReturn(T element) {
             if (_container.Count >= _maxSize || _isDisposed) {
                 return false;
             }
@@ -58,12 +62,12 @@ namespace ObjectsPool.Containers {
         
 #region DISPOSE
         ~DynamicPoolContainer() {
-            Dispose(false);
+            DisposeInternal(false);
         }
         
         private bool _isDisposed;
 
-        private void Dispose(bool disposing) {
+        private void DisposeInternal(bool disposing) {
             if (_isDisposed) {
                 return;
             }
@@ -73,7 +77,7 @@ namespace ObjectsPool.Containers {
         }
 
         public void Dispose() {
-            Dispose(true);
+            DisposeInternal(true);
             GC.SuppressFinalize(this);
         }
 #endregion

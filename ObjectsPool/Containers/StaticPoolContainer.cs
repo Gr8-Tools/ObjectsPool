@@ -7,7 +7,7 @@ namespace ObjectsPool.Containers {
     /// <summary>
     /// Контейнер объектов фиксированного размера 
     /// </summary>
-    internal sealed class StaticPoolContainer<T> : IPoolContainer<T> {
+    internal sealed class StaticPoolContainer<T> : IPoolContainer<T>{
         private readonly BitArray _flagArray;
         private readonly T[] _container;
 
@@ -37,18 +37,19 @@ namespace ObjectsPool.Containers {
         /// Пытается получить элемент из коллекции
         /// <para>(Может вернуть default)</para>
         /// </summary>
-        public T Get() {
+        public bool TryGet(out T element) {
             for (int i = 0; i < _flagArray.Length; i++) {
                 if (!_flagArray.Get(i)) {
                     continue;
                 }
                 
                 _flagArray.Set(i, false);
-                var element = _container[i];
+                element = _container[i];
                 _container[i] = default;
-                return element;
+                return true;
             }
 
+            element = default;
             return default;
         }
 
@@ -57,7 +58,7 @@ namespace ObjectsPool.Containers {
         /// <para>В случае, если элемент удалось закэшировать, возвращает TRUE</para>
         /// <para>Иначе - FALSE</para>
         /// </summary>
-        public bool Return(T element) {
+        public bool TryReturn(T element) {
             if (_isDisposed) {
                 return false;
             }

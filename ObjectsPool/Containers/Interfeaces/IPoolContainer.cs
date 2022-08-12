@@ -15,13 +15,13 @@ namespace ObjectsPool.Containers.Interfeaces {
         /// Пытается получить элемент из коллекции
         /// <para>(Может вернуть default)</para>
         /// </summary>
-        T Get();
+        bool TryGet(out T element);
         
         /// <summary>
         /// <para>Пытается вернуть элемент в коллекцию.</para>
         /// <para>В случае, если элемент удалось закэшировать, возвращает TRUE</para>
         /// <para>Иначе - FALSE</para>
         /// </summary>
-        bool Return(T element);
+        bool TryReturn(T element);
     }
 }

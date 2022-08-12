@@ -12,13 +12,13 @@ namespace ObjectsPool.Systems {
         private protected abstract IPoolContainer<T> Container { get; }
         
         private readonly Func<IPoolSystem<T>, T> _createFunction;
-        private readonly Action<T> _getAction;
-        private readonly Action<T> _releaseAction;
-        private readonly Action<T> _destroyAction;
+        private readonly Action<T>? _getAction;
+        private readonly Action<T>? _releaseAction;
+        private readonly Action<T>? _destroyAction;
         
         private protected BasePoolSystem(PoolSystemActionArgs<T> actionArgs) {
             _createFunction = poolSystem => {
-                var instance = actionArgs.CreateFunction?.Invoke(poolSystem);
+                var instance = actionArgs.CreateFunction.Invoke(poolSystem);
                 actionArgs.CreateCallback?.Invoke(instance);
                 return instance;
             };
@@ -39,9 +39,11 @@ namespace ObjectsPool.Systems {
         /// <para>Если не удалось, то генерирует новый из функции <param name="CreateFunction"> Функция создания экземпляра пула</param></para>
         /// </summary>
         public T Get() {
-            var element = Container.Get() ??
-                          _createFunction?.Invoke(this) ??
+            if (!Container.TryGet(out var element)) {
+                element = _createFunction.Invoke(this) ??
                           throw new Exception("Can't create object as there is nothing in Pool and constructor-method is null");
+            }
+                          
 
             _getAction?.Invoke(element);
             return element;
@@ -54,7 +56,7 @@ namespace ObjectsPool.Systems {
         /// </summary>
         public void Return(T element) {
             _releaseAction?.Invoke(element);
-            if (!Container.Return(element) || _isDisposed) {
+            if (!Container.TryReturn(element) || _isDisposed) {
                 _destroyAction?.Invoke(element);
             }
         }
@@ -67,8 +69,7 @@ namespace ObjectsPool.Systems {
                 return;
             }
 
-            T element;
-            while ((element = Container.Get()) != default) {
+            while (Container.TryGet(out T element)) {
                 _destroyAction?.Invoke(element);
             }
             Container.Dispose();
